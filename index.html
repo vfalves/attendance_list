@@ -8,43 +8,145 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
 
-    <title>Lista de Presença Biométrica</title> 
+    <title>Gestão de Treinamento Modec</title> 
+
+     
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script> 
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> 
+
+ 
+
     <style> 
 
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; } 
+        :root { --primary: #0056b3; --danger: #dc3545; --success: #28a745; --bg: #f4f4f9; } 
 
-        .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); } 
-
-        input, button { display: block; width: 100%; margin-bottom: 10px; padding: 12px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; } 
-
-        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; } 
-
-        button:hover { background-color: #0056b3; } 
-
-        h2 { text-align: center; color: #333; } 
-
-        hr { margin: 30px 0; border: 0; border-top: 1px solid #eee; } 
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: var(--bg); } 
 
          
 
-        #message { text-align: center; margin-top: 20px; font-weight: bold; min-height: 24px; } 
+        /* --- LAYOUT GERAL --- */ 
+
+        .app-container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); } 
 
          
 
-        .list-container { margin-top: 20px; } 
+        /* --- NAVEGAÇÃO (ABAS) --- */ 
 
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; } 
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; } 
 
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; } 
+        .tab { padding: 10px 20px; cursor: pointer; font-weight: bold; color: #666; border: none; background: none; font-size: 16px; } 
 
-        th { background-color: #f8f9fa; } 
+        .tab.active { color: var(--primary); border-bottom: 3px solid var(--primary); } 
+
+        .tab:hover { background-color: #f8f9fa; } 
 
          
 
-        .section-title { font-size: 1.2em; margin-bottom: 10px; color: #555; border-bottom: 2px solid #007bff; display: inline-block; } 
+        .view-section { display: none; animation: fadeIn 0.3s; } 
+
+        .view-section.active { display: block; } 
+
+         
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } } 
+
+ 
+
+        /* --- FORMULÁRIOS --- */ 
+
+        .form-group { margin-bottom: 15px; } 
+
+        input, select, textarea { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; } 
+
+        button { padding: 10px 20px; cursor: pointer; border: none; border-radius: 4px; font-weight: bold; color: white; transition: 0.2s; } 
+
+        .btn-primary { background-color: var(--primary); } 
+
+        .btn-danger { background-color: var(--danger); } 
+
+        .btn-success { background-color: var(--success); } 
+
+        .btn-outline { background-color: transparent; border: 1px solid #666; color: #666; } 
+
+        button:disabled { background-color: #ccc; cursor: not-allowed; } 
+
+ 
+
+        /* --- TABELA DE USUÁRIOS --- */ 
+
+        .user-table { width: 100%; border-collapse: collapse; margin-top: 10px; } 
+
+        .user-table th, .user-table td { border: 1px solid #ddd; padding: 8px; text-align: left; } 
+
+        .user-table th { background-color: #f1f1f1; } 
+
+        .action-btn { background: none; border: none; cursor: pointer; color: var(--danger); font-size: 1.2em; } 
+
+ 
+
+        /* --- FOLHA DE PRESENÇA (ESTILO "PAPEL" PARA PDF) --- */ 
+
+        #attendanceSheet { 
+
+            border: 1px solid #000; 
+
+            padding: 20px; 
+
+            background: white; 
+
+            margin-top: 20px; 
+
+            font-family: Arial, sans-serif; 
+
+            font-size: 12px; 
+
+        } 
+
+         
+
+        .sheet-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 10px; } 
+
+        .logo-area { width: 150px; height: 50px; display: flex; align-items: center; justify-content: center; } 
+
+         
+
+        .grid-header { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px; } 
+
+        .field-box { border: 1px solid #999; padding: 5px; min-height: 20px; } 
+
+        .field-label { font-weight: bold; font-size: 10px; color: #333; display: block; margin-bottom: 2px; } 
+
+        .field-value { font-weight: bold; color: #000; } 
+
+ 
+
+        .instructor-area { margin-top: 15px; border: 1px solid #999; padding: 10px; background: #fdfdfd; } 
+
+         
+
+        .roster-table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; } 
+
+        .roster-table th { background-color: #ddd; border: 1px solid #000; padding: 5px; } 
+
+        .roster-table td { border: 1px solid #000; padding: 5px; } 
+
+ 
+
+        .digital-sign { color: green; font-style: italic; font-size: 0.9em; } 
+
+         
+
+        .controls-area { margin-top: 20px; padding: 10px; background: #eee; border-radius: 5px; display: flex; gap: 10px; flex-wrap: wrap; } 
+
+         
+
+        #timerDisplay { font-size: 1.5em; font-weight: bold; margin-left: auto; color: #333; } 
+
+        #message { text-align: center; margin-top: 10px; font-weight: bold; height: 20px; } 
 
     </style> 
 
@@ -52,434 +154,788 @@
 
 <body> 
 
-    <div class="container"> 
+ 
 
-        <h2>Sistema de Presença Biométrica</h2> 
+<div class="app-container"> 
 
-         
-
-        <div class="section-title">1. Novo Cadastro</div> 
-
-        <form id="registrationForm"> 
-
-            <input type="text" id="name" placeholder="Nome Completo" required> 
-
-            <input type="text" id="role" placeholder="Função" required> 
-
-            <input type="text" id="company" placeholder="Empresa" required> 
-
-            <button type="submit">Cadastrar Digital</button> 
-
-        </form> 
+    <div id="message"></div> 
 
  
 
-        <hr> 
+    <div class="tabs"> 
 
- 
+        <button class="tab active" onclick="switchTab('tab-meeting', event)">Reunião / Lista</button> 
 
-        <div class="section-title">2. Registrar Presença na Reunião</div> 
+        <button class="tab" onclick="switchTab('tab-users', event)">Gestão de Profissionais</button> 
 
-        <input type="text" id="meetingTopic" placeholder="Tema da Reunião (Ex: Daily Scrum, Planning)" value="Reunião Geral"> 
-
-        <button id="btnCheckIn" style="background-color: #28a745;">Confirmar Presença (Biometria)</button> 
-
-         
-
-        <hr> 
-
- 
-
-        <div class="section-title">3. Listas</div> 
-
-        <button id="btnLoadAttendance" style="background-color: #6c757d;">Ver Lista de Presença Atual</button> 
-
-         
-
-        <div id="listOutput" class="list-container"></div> 
-
-        <div id="message"></div> 
+        <button class="tab" onclick="switchTab('tab-register', event)">Novo Cadastro</button> 
 
     </div> 
 
  
 
-    <script> 
+    <div id="tab-meeting" class="view-section active"> 
 
-        // --- CONFIGURAÇÃO DO SUPABASE (JÁ INSERIDA) --- 
+         
 
-        const supabaseUrl = 'https://bzlulitnafujhkosbqdw.supabase.co'; 
+        <div class="controls-area" data-html2canvas-ignore="true"> 
 
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6bHVsaXRuYWZ1amhrb3NicWR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1OTU5NzQsImV4cCI6MjA3OTE3MTk3NH0.JzJaFgybCXEH6bGyraWFrm4__OdQhDWw_lB-Bi7pxbI'; 
+            <button class="btn-primary" onclick="startMeeting()" id="btnStart"><i class="fas fa-play"></i> Iniciar Reunião</button> 
 
-        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey); 
+            <button class="btn-danger" onclick="endMeeting()" id="btnEnd" disabled><i class="fas fa-stop"></i> Encerrar Reunião</button> 
+
+            <button class="btn-success" onclick="addParticipant()" id="btnAddPerson" disabled><i class="fas fa-fingerprint"></i> Adicionar Pessoa</button> 
+
+            <button class="btn-outline" onclick="signInstructor()"><i class="fas fa-user-tie"></i> Assinar Instrutor</button> 
+
+            <div id="timerDisplay">00:00:00</div> 
+
+            <button class="btn-primary" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> Salvar PDF</button> 
+
+        </div> 
 
  
 
-        // Elementos DOM 
+        <div id="attendanceSheet"> 
 
-        const messageDiv = document.getElementById('message'); 
+            <div class="sheet-header"> 
 
-        const listOutput = document.getElementById('listOutput'); 
+                <div class="logo-area"> 
 
-        const meetingTopicInput = document.getElementById('meetingTopic'); 
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/64/MODEC_Logo.svg/1200px-MODEC_Logo.svg.png" alt="MODEC" style="max-height: 40px;"> 
+
+                </div> 
+
+                <div style="text-align: right;"> 
+
+                    <h2 style="margin:0;">Lista de Presença - Treinamento</h2> 
+
+                    <small>Documento Gerado Eletronicamente</small> 
+
+                </div> 
+
+            </div> 
 
  
 
-        // --- FUNÇÕES UTILITÁRIAS --- 
+            <div class="grid-header"> 
 
-        function bufferToArray(buffer) { 
+                <div class="field-box"> 
 
-            return Array.from(new Uint8Array(buffer)); 
+                    <span class="field-label">DATA:</span> 
+
+                    <input type="date" id="docDate" style="border:none; width:90%; font-family:inherit;"> 
+
+                </div> 
+
+                <div class="field-box"> 
+
+                    <span class="field-label">HORA INÍCIO:</span> 
+
+                    <span id="docStartTime" class="field-value">--:--</span> 
+
+                </div> 
+
+                <div class="field-box"> 
+
+                    <span class="field-label">DURAÇÃO DA SESSÃO:</span> 
+
+                    <span id="docDuration" class="field-value">-- min</span> 
+
+                </div> 
+
+            </div> 
+
+ 
+
+            <div class="field-box" style="margin-bottom: 10px;"> 
+
+                <span class="field-label">LOCAL / PLATAFORMA:</span> 
+
+                <input type="text" id="docLocation" placeholder="Ex: Sala de Treinamento 1 / Teams" style="border:none; width:100%;"> 
+
+            </div> 
+
+ 
+
+            <div class="field-box" style="margin-bottom: 10px;"> 
+
+                <span class="field-label">TÍTULO DO CURSO / EVENTO:</span> 
+
+                <input type="text" id="docTitle" placeholder="Digite o título..." style="border:none; width:100%; font-weight:bold;"> 
+
+            </div> 
+
+ 
+
+            <div class="field-box" style="height: 60px; margin-bottom: 15px;"> 
+
+                <span class="field-label">DESCRIÇÃO DOS CONTEÚDOS:</span> 
+
+                <textarea id="docDescription" style="border:none; width:100%; height:40px; resize:none;" placeholder="Tópicos abordados..."></textarea> 
+
+            </div> 
+
+ 
+
+            <div class="instructor-area"> 
+
+                <span class="field-label" style="border-bottom: 1px solid #ccc; padding-bottom:5px; margin-bottom:5px; display:block;">DADOS DO INSTRUTOR / RESPONSÁVEL</span> 
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"> 
+
+                    <div>Nome: <span id="instName" class="field-value">...</span></div> 
+
+                    <div>Função: <span id="instRole" class="field-value">...</span></div> 
+
+                    <div>Qualificação: <input type="text" placeholder="Ex: Engenheiro Sr." style="border:none; border-bottom:1px dotted #999; width: 60%;"></div> 
+
+                    <div>Assinatura: <span id="instSign" class="digital-sign">Aguardando biometria...</span></div> 
+
+                </div> 
+
+            </div> 
+
+ 
+
+            <table class="roster-table"> 
+
+                <thead> 
+
+                    <tr> 
+
+                        <th style="width: 5%;">#</th> 
+
+                        <th style="width: 25%;">Nome Completo</th> 
+
+                        <th style="width: 20%;">Email</th> 
+
+                        <th style="width: 15%;">Função</th> 
+
+                        <th style="width: 10%;">Local</th> 
+
+                        <th style="width: 10%;">Empresa</th> 
+
+                        <th style="width: 15%;">Assinatura</th> 
+
+                    </tr> 
+
+                </thead> 
+
+                <tbody id="rosterBody"> 
+
+                    </tbody> 
+
+            </table> 
+
+        </div> 
+
+    </div> 
+
+ 
+
+    <div id="tab-users" class="view-section"> 
+
+        <div style="display: flex; justify-content: space-between; align-items: center;"> 
+
+            <h3>Profissionais Cadastrados</h3> 
+
+            <button class="btn-primary" onclick="loadUsersList()"><i class="fas fa-sync"></i> Atualizar</button> 
+
+        </div> 
+
+        <table class="user-table"> 
+
+            <thead> 
+
+                <tr> 
+
+                    <th>Nome</th> 
+
+                    <th>Função</th> 
+
+                    <th>Empresa</th> 
+
+                    <th>Email</th> 
+
+                    <th>Ação</th> 
+
+                </tr> 
+
+            </thead> 
+
+            <tbody id="usersListBody"> 
+
+                </tbody> 
+
+        </table> 
+
+    </div> 
+
+ 
+
+    <div id="tab-register" class="view-section"> 
+
+        <h3>Novo Cadastro Biométrico</h3> 
+
+        <form id="registrationForm"> 
+
+            <input type="text" id="regName" placeholder="Nome Completo" required> 
+
+            <input type="email" id="regEmail" placeholder="Email Corporativo" required> 
+
+            <input type="text" id="regRole" placeholder="Função (Ex: Soldador)" required> 
+
+            <input type="text" id="regCompany" placeholder="Empresa" required> 
+
+            <button type="submit" class="btn-primary" style="margin-top: 10px;">Cadastrar Digital</button> 
+
+        </form> 
+
+    </div> 
+
+ 
+
+</div> 
+
+ 
+
+<script> 
+
+    // --- CONFIGURAÇÃO SUPABASE (Suas Credenciais Atualizadas) --- 
+
+    const supabaseUrl = 'https://bzlulitnafujhkosbqdw.supabase.co'; 
+
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6bHVsaXRuYWZ1amhrb3NicWR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1OTU5NzQsImV4cCI6MjA3OTE3MTk3NH0.JzJaFgybCXEH6bGyraWFrm4__OdQhDWw_lB-Bi7pxbI'; 
+
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey); 
+
+ 
+
+    // --- VARIÁVEIS GLOBAIS --- 
+
+    let meetingStartTime = null; 
+
+    let meetingTimerInterval = null; 
+
+    let participantCount = 0; 
+
+ 
+
+    // --- UTILITÁRIOS --- 
+
+    function bufferToArray(buffer) { return Array.from(new Uint8Array(buffer)); } 
+
+    function arrayToBuffer(array) { return new Uint8Array(array); } 
+
+    function showMessage(text, color) { 
+
+        const msgDiv = document.getElementById('message'); 
+
+        msgDiv.textContent = text; 
+
+        msgDiv.style.color = color; 
+
+        setTimeout(() => msgDiv.textContent = '', 5000); 
+
+    } 
+
+     
+
+    function switchTab(tabId, event) { 
+
+        // Esconde todas as seções 
+
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active')); 
+
+        // Remove active dos botões 
+
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active')); 
+
+         
+
+        // Ativa a aba e o botão 
+
+        document.getElementById(tabId).classList.add('active'); 
+
+        if(event) event.target.classList.add('active'); 
+
+         
+
+        if(tabId === 'tab-users') loadUsersList(); 
+
+    } 
+
+ 
+
+    // --- 1. GESTÃO DE USUÁRIOS (ABA 2) --- 
+
+    async function loadUsersList() { 
+
+        const tbody = document.getElementById('usersListBody'); 
+
+        tbody.innerHTML = '<tr><td colspan="5">Carregando...</td></tr>'; 
+
+         
+
+        const { data, error } = await supabase.from('users').select('*').order('name'); 
+
+         
+
+        if (error) { 
+
+            tbody.innerHTML = `<tr><td colspan="5" style="color:red">Erro: ${error.message}</td></tr>`; 
+
+            return; 
 
         } 
 
  
 
-        function arrayToBuffer(array) { 
+        tbody.innerHTML = ''; 
 
-            return new Uint8Array(array); 
+        if(!data || data.length === 0) { 
 
-        } 
+            tbody.innerHTML = '<tr><td colspan="5">Nenhum cadastrado.</td></tr>'; 
 
- 
-
-        function showMessage(text, color) { 
-
-            messageDiv.textContent = text; 
-
-            messageDiv.style.color = color; 
-
-            setTimeout(() => { messageDiv.textContent = ''; }, 5000); 
+            return; 
 
         } 
 
  
 
-        // --- CADASTRO DE USUÁRIO --- 
+        data.forEach(user => { 
 
-        async function registerUser(name, role, company) { 
+            const tr = document.createElement('tr'); 
 
-            try { 
+            tr.innerHTML = ` 
 
-                showMessage('Solicitando digital...', 'blue'); 
+                <td>${user.name}</td> 
 
- 
+                <td>${user.role}</td> 
 
-                const challenge = new Uint8Array(32); 
+                <td>${user.company}</td> 
 
-                window.crypto.getRandomValues(challenge); 
+                <td>${user.email || '-'}</td> 
 
- 
+                <td style="text-align:center;"> 
 
-                const publicKey = await navigator.credentials.create({ 
+                    <button class="action-btn" onclick="deleteUser('${user.id}')"><i class="fas fa-trash-alt"></i></button> 
 
-                    publicKey: { 
+                </td> 
 
-                        rp: { name: 'Sistema de Presença' }, 
+            `; 
 
-                        user: { 
+            tbody.appendChild(tr); 
 
-                            id: window.crypto.getRandomValues(new Uint8Array(16)), 
+        }); 
 
-                            name: name, 
-
-                            displayName: name 
-
-                        }, 
-
-                        challenge: challenge, 
-
-                        pubKeyCredParams: [{ type: 'public-key', alg: -7 }], 
-
-                        timeout: 60000, 
-
-                        attestation: "none" 
-
-                    } 
-
-                }); 
+    } 
 
  
 
-                const { data, error } = await supabase 
+    async function deleteUser(id) { 
 
-                    .from('users') 
+        if(!confirm('Tem certeza que deseja excluir este profissional?')) return; 
 
-                    .insert([{ 
+         
 
-                        name: name, 
+        const { error } = await supabase.from('users').delete().eq('id', id); 
 
-                        role: role, 
+        if(error) showMessage('Erro ao excluir: ' + error.message, 'red'); 
 
-                        company: company, 
+        else { 
 
-                        credential_id: bufferToArray(publicKey.rawId) 
+            showMessage('Usuário excluído.', 'green'); 
 
-                    }]); 
-
- 
-
-                if (error) throw error; 
-
- 
-
-                showMessage('Usuário cadastrado com sucesso!', 'green'); 
-
-                document.getElementById('registrationForm').reset(); 
-
- 
-
-            } catch (error) { 
-
-                console.error(error); 
-
-                showMessage(`Erro no cadastro: ${error.message || error}`, 'red'); 
-
-            } 
+            loadUsersList(); 
 
         } 
 
- 
-
-        // --- REGISTRAR PRESENÇA (LOGIN) --- 
-
-        async function registerAttendance() { 
-
-            const topic = meetingTopicInput.value; 
-
-            if (!topic) return showMessage('Informe o tema da reunião.', 'red'); 
+    } 
 
  
 
-            try { 
+    // --- 2. CADASTRO (ABA 3) --- 
 
-                showMessage('Lendo digital...', 'blue'); 
+    document.getElementById('registrationForm').addEventListener('submit', async (e) => { 
 
- 
+        e.preventDefault(); 
 
-                // 1. Buscar todos usuários 
+        const name = document.getElementById('regName').value; 
 
-                const { data: users, error: fetchError } = await supabase.from('users').select('*'); 
+        const email = document.getElementById('regEmail').value; 
 
-                if (fetchError) throw fetchError; 
+        const role = document.getElementById('regRole').value; 
 
- 
-
-                if (!users || users.length === 0) return showMessage('Nenhum usuário cadastrado.', 'red'); 
+        const company = document.getElementById('regCompany').value; 
 
  
 
-                // 2. Preparar credenciais 
+        try { 
 
-                const allowCredentials = users.map(u => ({ 
+            showMessage('Coloque o dedo no leitor...', 'blue'); 
 
-                    id: arrayToBuffer(u.credential_id), 
+            const challenge = new Uint8Array(32); 
 
-                    type: 'public-key' 
-
-                })); 
+            window.crypto.getRandomValues(challenge); 
 
  
 
-                const challenge = new Uint8Array(32); 
+            // Cria credencial biométrica 
 
-                window.crypto.getRandomValues(challenge); 
+            const publicKey = await navigator.credentials.create({ 
 
- 
+                publicKey: { 
 
-                // 3. Solicitar autenticação 
+                    rp: { name: 'Modec Training' }, 
 
-                const assertion = await navigator.credentials.get({ 
+                    user: { 
 
-                    publicKey: { 
+                        id: window.crypto.getRandomValues(new Uint8Array(16)), 
 
-                        challenge: challenge, 
+                        name: email,  
 
-                        allowCredentials: allowCredentials, 
+                        displayName: name 
 
-                        userVerification: "preferred" 
+                    }, 
 
-                    } 
+                    challenge: challenge, 
 
-                }); 
+                    pubKeyCredParams: [{ type: 'public-key', alg: -7 }], 
 
- 
+                    timeout: 60000, 
 
-                // 4. Identificar usuário comparando IDs 
-
-                const authenticatedUser = users.find(u => { 
-
-                    const uArr = u.credential_id;  
-
-                    const aArr = bufferToArray(assertion.rawId); 
-
-                    return JSON.stringify(uArr) === JSON.stringify(aArr); 
-
-                }); 
-
- 
-
-                if (authenticatedUser) { 
-
-                    // 5. Registrar presença 
-
-                    const { error: insertError } = await supabase 
-
-                        .from('attendance') 
-
-                        .insert([{ 
-
-                            user_id: authenticatedUser.id, 
-
-                            user_name: authenticatedUser.name, 
-
-                            meeting_topic: topic 
-
-                        }]); 
-
- 
-
-                    if (insertError) throw insertError; 
-
- 
-
-                    showMessage(`Presença confirmada: ${authenticatedUser.name}`, 'green'); 
-
-                    loadAttendanceList();  
-
-                } else { 
-
-                    showMessage('Digital não reconhecida.', 'red'); 
+                    attestation: "none" 
 
                 } 
-
- 
-
-            } catch (error) { 
-
-                console.error(error); 
-
-                // Filtra erros de cancelamento do usuário para não poluir 
-
-                if(error.name !== "NotAllowedError") { 
-
-                    showMessage('Falha na leitura. Tente novamente.', 'orange'); 
-
-                } 
-
-            } 
-
-        } 
-
- 
-
-        // --- LISTAR PRESENÇAS --- 
-
-        async function loadAttendanceList() { 
-
-            const topic = meetingTopicInput.value; 
-
-            listOutput.innerHTML = '<p>Carregando...</p>'; 
-
- 
-
-            const { data, error } = await supabase 
-
-                .from('attendance') 
-
-                .select('*') 
-
-                .eq('meeting_topic', topic) 
-
-                .order('check_in_time', { ascending: false }); 
-
- 
-
-            if (error) { 
-
-                listOutput.innerHTML = `<p style="color:red">Erro ao carregar: ${error.message}</p>`; 
-
-                return; 
-
-            } 
-
- 
-
-            if (data.length === 0) { 
-
-                listOutput.innerHTML = `<p>Nenhuma presença registrada para "${topic}".</p>`; 
-
-                return; 
-
-            } 
-
- 
-
-            let html = `<h3>Lista: ${topic}</h3><table> 
-
-                        <thead><tr><th>Nome</th><th>Status</th><th>Hora</th></tr></thead> 
-
-                        <tbody>`; 
-
-             
-
-            data.forEach(item => { 
-
-                const date = new Date(item.check_in_time).toLocaleTimeString('pt-BR'); 
-
-                html += `<tr> 
-
-                            <td>${item.user_name}</td> 
-
-                            <td><span style="color:green">✔ Presente</span></td> 
-
-                            <td>${date}</td> 
-
-                         </tr>`; 
 
             }); 
 
  
 
-            html += '</tbody></table>'; 
+            // Salva no Supabase 
 
-            listOutput.innerHTML = html; 
+            const { error } = await supabase.from('users').insert([{ 
 
-        } 
+                name: name, 
+
+                email: email, 
+
+                role: role, 
+
+                company: company, 
+
+                credential_id: bufferToArray(publicKey.rawId) // Array puro para JSON 
+
+            }]); 
 
  
 
-        // --- EVENT LISTENERS --- 
+            if(error) throw error; 
 
-        document.getElementById('registrationForm').addEventListener('submit', (e) => { 
+ 
 
-            e.preventDefault(); 
+            showMessage('Cadastro realizado com sucesso!', 'green'); 
 
-            registerUser( 
+            e.target.reset(); 
 
-                document.getElementById('name').value, 
+        } catch (err) { 
 
-                document.getElementById('role').value, 
+            console.error(err); 
 
-                document.getElementById('company').value 
+            showMessage('Erro: ' + (err.message || 'Falha no cadastro'), 'red'); 
 
-            ); 
+        } 
+
+    }); 
+
+ 
+
+    // --- 3. LÓGICA DA REUNIÃO (ABA 1) --- 
+
+     
+
+    // Helper para Autenticação Genérica (Busca quem é o dono da digital) 
+
+    async function identifyUserByBiometrics() { 
+
+        // 1. Busca todos usuários 
+
+        const { data: users, error } = await supabase.from('users').select('*'); 
+
+        if(error || !users.length) throw new Error('Nenhum usuário no banco.'); 
+
+ 
+
+        // 2. Prepara lista de digitais permitidas 
+
+        const allowCredentials = users.map(u => ({ 
+
+            id: arrayToBuffer(u.credential_id), 
+
+            type: 'public-key' 
+
+        })); 
+
+ 
+
+        const challenge = new Uint8Array(32); 
+
+        window.crypto.getRandomValues(challenge); 
+
+ 
+
+        // 3. Solicita a digital 
+
+        const assertion = await navigator.credentials.get({ 
+
+            publicKey: { 
+
+                challenge: challenge, 
+
+                allowCredentials: allowCredentials, 
+
+                userVerification: "preferred" 
+
+            } 
 
         }); 
 
  
 
-        document.getElementById('btnCheckIn').addEventListener('click', registerAttendance); 
+        // 4. Compara o ID recebido com o banco 
 
-        document.getElementById('btnLoadAttendance').addEventListener('click', loadAttendanceList); 
+        const user = users.find(u => JSON.stringify(u.credential_id) === JSON.stringify(bufferToArray(assertion.rawId))); 
+
+        if(!user) throw new Error('Digital não encontrada.'); 
+
+         
+
+        return user; 
+
+    } 
 
  
 
-    </script> 
+    // Assinatura do Instrutor 
+
+    async function signInstructor() { 
+
+        try { 
+
+            showMessage('Instrutor, confirme sua digital...', 'blue'); 
+
+            const user = await identifyUserByBiometrics(); 
+
+             
+
+            document.getElementById('instName').textContent = user.name; 
+
+            document.getElementById('instRole').textContent = user.role; 
+
+            const now = new Date(); 
+
+            document.getElementById('instSign').innerHTML = `Assinado digitalmente em ${now.toLocaleDateString()} às ${now.toLocaleTimeString()}`; 
+
+            document.getElementById('instSign').style.color = '#000'; 
+
+            showMessage('Instrutor assinado.', 'green'); 
+
+        } catch(err) { 
+
+            console.error(err); 
+
+            if(err.name !== 'NotAllowedError') showMessage('Erro: ' + err.message, 'red'); 
+
+        } 
+
+    } 
+
+ 
+
+    // Controle da Reunião 
+
+    function startMeeting() { 
+
+        meetingStartTime = new Date(); 
+
+        document.getElementById('docDate').valueAsDate = meetingStartTime; 
+
+        document.getElementById('docStartTime').textContent = meetingStartTime.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'}); 
+
+         
+
+        document.getElementById('btnStart').disabled = true; 
+
+        document.getElementById('btnEnd').disabled = false; 
+
+        document.getElementById('btnAddPerson').disabled = false; 
+
+         
+
+        // Cronômetro visual 
+
+        meetingTimerInterval = setInterval(() => { 
+
+            const now = new Date(); 
+
+            const diff = new Date(now - meetingStartTime); 
+
+            document.getElementById('timerDisplay').textContent = diff.toISOString().substr(11, 8); 
+
+        }, 1000); 
+
+    } 
+
+ 
+
+    function endMeeting() { 
+
+        if(!meetingStartTime) return; 
+
+        clearInterval(meetingTimerInterval); 
+
+        const endTime = new Date(); 
+
+        const durationMs = endTime - meetingStartTime; 
+
+        const durationMinutes = Math.floor(durationMs / 60000); 
+
+         
+
+        document.getElementById('docDuration').textContent = `${durationMinutes} min`; 
+
+        document.getElementById('btnEnd').disabled = true; 
+
+        document.getElementById('btnAddPerson').disabled = true; 
+
+        document.getElementById('timerDisplay').style.color = 'red'; 
+
+        showMessage('Reunião encerrada.', 'orange'); 
+
+    } 
+
+ 
+
+    // Adicionar Participante na Tabela 
+
+    async function addParticipant() { 
+
+        try { 
+
+            showMessage('Participante, coloque o dedo...', 'blue'); 
+
+            const user = await identifyUserByBiometrics(); 
+
+             
+
+            // Verifica duplicidade visual na tabela atual 
+
+            const existingRows = document.querySelectorAll('#rosterBody tr'); 
+
+            for(let row of existingRows) { 
+
+                // A célula 1 contém o nome 
+
+                if(row.cells[1].textContent === user.name) { 
+
+                    showMessage('Usuário já está na lista!', 'orange'); 
+
+                    return; 
+
+                } 
+
+            } 
+
+ 
+
+            participantCount++; 
+
+            const location = document.getElementById('docLocation').value || 'Remoto/Sala'; 
+
+            const now = new Date(); 
+
+            const timestamp = `${now.toLocaleDateString()} ${now.toLocaleTimeString()}`; 
+
+ 
+
+            const tbody = document.getElementById('rosterBody'); 
+
+            const tr = document.createElement('tr'); 
+
+            tr.innerHTML = ` 
+
+                <td>${participantCount}</td> 
+
+                <td>${user.name}</td> 
+
+                <td>${user.email || ''}</td> 
+
+                <td>${user.role}</td> 
+
+                <td>${location}</td> 
+
+                <td>${user.company}</td> 
+
+                <td class="digital-sign">Assinado digitalmente<br>${timestamp}</td> 
+
+            `; 
+
+            tbody.appendChild(tr); 
+
+             
+
+            showMessage(`Presença confirmada: ${user.name}`, 'green'); 
+
+        } catch(err) { 
+
+            console.error(err); 
+
+            if(err.name !== 'NotAllowedError') showMessage('Erro: ' + err.message, 'red'); 
+
+        } 
+
+    } 
+
+ 
+
+    // Exportar PDF 
+
+    function exportToPDF() { 
+
+        const element = document.getElementById('attendanceSheet'); 
+
+        const title = document.getElementById('docTitle').value || 'Lista_Presenca'; 
+
+         
+
+        const opt = { 
+
+            margin:       0.3, 
+
+            filename:     `${title}.pdf`, 
+
+            image:        { type: 'jpeg', quality: 0.98 }, 
+
+            html2canvas:  { scale: 2 }, 
+
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' } 
+
+        }; 
+
+ 
+
+        // Salva PDF 
+
+        html2pdf().set(opt).from(element).save(); 
+
+    } 
+
+</script> 
+
+ 
 
 </body> 
 
 </html> 
-
- 
