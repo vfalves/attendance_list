@@ -1,0 +1,485 @@
+<!DOCTYPE html> 
+
+<html lang="pt-BR"> 
+
+<head> 
+
+    <meta charset="UTF-8"> 
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+
+    <title>Lista de Presença Biométrica</title> 
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script> 
+
+    <style> 
+
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; background-color: #f4f4f9; } 
+
+        .container { max-width: 700px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); } 
+
+        input, button { display: block; width: 100%; margin-bottom: 10px; padding: 12px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; } 
+
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-weight: bold; } 
+
+        button:hover { background-color: #0056b3; } 
+
+        h2 { text-align: center; color: #333; } 
+
+        hr { margin: 30px 0; border: 0; border-top: 1px solid #eee; } 
+
+         
+
+        #message { text-align: center; margin-top: 20px; font-weight: bold; min-height: 24px; } 
+
+         
+
+        .list-container { margin-top: 20px; } 
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; } 
+
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: left; } 
+
+        th { background-color: #f8f9fa; } 
+
+         
+
+        .section-title { font-size: 1.2em; margin-bottom: 10px; color: #555; border-bottom: 2px solid #007bff; display: inline-block; } 
+
+    </style> 
+
+</head> 
+
+<body> 
+
+    <div class="container"> 
+
+        <h2>Sistema de Presença Biométrica</h2> 
+
+         
+
+        <div class="section-title">1. Novo Cadastro</div> 
+
+        <form id="registrationForm"> 
+
+            <input type="text" id="name" placeholder="Nome Completo" required> 
+
+            <input type="text" id="role" placeholder="Função" required> 
+
+            <input type="text" id="company" placeholder="Empresa" required> 
+
+            <button type="submit">Cadastrar Digital</button> 
+
+        </form> 
+
+ 
+
+        <hr> 
+
+ 
+
+        <div class="section-title">2. Registrar Presença na Reunião</div> 
+
+        <input type="text" id="meetingTopic" placeholder="Tema da Reunião (Ex: Daily Scrum, Planning)" value="Reunião Geral"> 
+
+        <button id="btnCheckIn" style="background-color: #28a745;">Confirmar Presença (Biometria)</button> 
+
+         
+
+        <hr> 
+
+ 
+
+        <div class="section-title">3. Listas</div> 
+
+        <button id="btnLoadAttendance" style="background-color: #6c757d;">Ver Lista de Presença Atual</button> 
+
+         
+
+        <div id="listOutput" class="list-container"></div> 
+
+        <div id="message"></div> 
+
+    </div> 
+
+ 
+
+    <script> 
+
+        // --- CONFIGURAÇÃO DO SUPABASE (JÁ INSERIDA) --- 
+
+        const supabaseUrl = 'https://bzlulitnafujhkosbqdw.supabase.co'; 
+
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ6bHVsaXRuYWZ1amhrb3NicWR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM1OTU5NzQsImV4cCI6MjA3OTE3MTk3NH0.JzJaFgybCXEH6bGyraWFrm4__OdQhDWw_lB-Bi7pxbI'; 
+
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey); 
+
+ 
+
+        // Elementos DOM 
+
+        const messageDiv = document.getElementById('message'); 
+
+        const listOutput = document.getElementById('listOutput'); 
+
+        const meetingTopicInput = document.getElementById('meetingTopic'); 
+
+ 
+
+        // --- FUNÇÕES UTILITÁRIAS --- 
+
+        function bufferToArray(buffer) { 
+
+            return Array.from(new Uint8Array(buffer)); 
+
+        } 
+
+ 
+
+        function arrayToBuffer(array) { 
+
+            return new Uint8Array(array); 
+
+        } 
+
+ 
+
+        function showMessage(text, color) { 
+
+            messageDiv.textContent = text; 
+
+            messageDiv.style.color = color; 
+
+            setTimeout(() => { messageDiv.textContent = ''; }, 5000); 
+
+        } 
+
+ 
+
+        // --- CADASTRO DE USUÁRIO --- 
+
+        async function registerUser(name, role, company) { 
+
+            try { 
+
+                showMessage('Solicitando digital...', 'blue'); 
+
+ 
+
+                const challenge = new Uint8Array(32); 
+
+                window.crypto.getRandomValues(challenge); 
+
+ 
+
+                const publicKey = await navigator.credentials.create({ 
+
+                    publicKey: { 
+
+                        rp: { name: 'Sistema de Presença' }, 
+
+                        user: { 
+
+                            id: window.crypto.getRandomValues(new Uint8Array(16)), 
+
+                            name: name, 
+
+                            displayName: name 
+
+                        }, 
+
+                        challenge: challenge, 
+
+                        pubKeyCredParams: [{ type: 'public-key', alg: -7 }], 
+
+                        timeout: 60000, 
+
+                        attestation: "none" 
+
+                    } 
+
+                }); 
+
+ 
+
+                const { data, error } = await supabase 
+
+                    .from('users') 
+
+                    .insert([{ 
+
+                        name: name, 
+
+                        role: role, 
+
+                        company: company, 
+
+                        credential_id: bufferToArray(publicKey.rawId) 
+
+                    }]); 
+
+ 
+
+                if (error) throw error; 
+
+ 
+
+                showMessage('Usuário cadastrado com sucesso!', 'green'); 
+
+                document.getElementById('registrationForm').reset(); 
+
+ 
+
+            } catch (error) { 
+
+                console.error(error); 
+
+                showMessage(`Erro no cadastro: ${error.message || error}`, 'red'); 
+
+            } 
+
+        } 
+
+ 
+
+        // --- REGISTRAR PRESENÇA (LOGIN) --- 
+
+        async function registerAttendance() { 
+
+            const topic = meetingTopicInput.value; 
+
+            if (!topic) return showMessage('Informe o tema da reunião.', 'red'); 
+
+ 
+
+            try { 
+
+                showMessage('Lendo digital...', 'blue'); 
+
+ 
+
+                // 1. Buscar todos usuários 
+
+                const { data: users, error: fetchError } = await supabase.from('users').select('*'); 
+
+                if (fetchError) throw fetchError; 
+
+ 
+
+                if (!users || users.length === 0) return showMessage('Nenhum usuário cadastrado.', 'red'); 
+
+ 
+
+                // 2. Preparar credenciais 
+
+                const allowCredentials = users.map(u => ({ 
+
+                    id: arrayToBuffer(u.credential_id), 
+
+                    type: 'public-key' 
+
+                })); 
+
+ 
+
+                const challenge = new Uint8Array(32); 
+
+                window.crypto.getRandomValues(challenge); 
+
+ 
+
+                // 3. Solicitar autenticação 
+
+                const assertion = await navigator.credentials.get({ 
+
+                    publicKey: { 
+
+                        challenge: challenge, 
+
+                        allowCredentials: allowCredentials, 
+
+                        userVerification: "preferred" 
+
+                    } 
+
+                }); 
+
+ 
+
+                // 4. Identificar usuário comparando IDs 
+
+                const authenticatedUser = users.find(u => { 
+
+                    const uArr = u.credential_id;  
+
+                    const aArr = bufferToArray(assertion.rawId); 
+
+                    return JSON.stringify(uArr) === JSON.stringify(aArr); 
+
+                }); 
+
+ 
+
+                if (authenticatedUser) { 
+
+                    // 5. Registrar presença 
+
+                    const { error: insertError } = await supabase 
+
+                        .from('attendance') 
+
+                        .insert([{ 
+
+                            user_id: authenticatedUser.id, 
+
+                            user_name: authenticatedUser.name, 
+
+                            meeting_topic: topic 
+
+                        }]); 
+
+ 
+
+                    if (insertError) throw insertError; 
+
+ 
+
+                    showMessage(`Presença confirmada: ${authenticatedUser.name}`, 'green'); 
+
+                    loadAttendanceList();  
+
+                } else { 
+
+                    showMessage('Digital não reconhecida.', 'red'); 
+
+                } 
+
+ 
+
+            } catch (error) { 
+
+                console.error(error); 
+
+                // Filtra erros de cancelamento do usuário para não poluir 
+
+                if(error.name !== "NotAllowedError") { 
+
+                    showMessage('Falha na leitura. Tente novamente.', 'orange'); 
+
+                } 
+
+            } 
+
+        } 
+
+ 
+
+        // --- LISTAR PRESENÇAS --- 
+
+        async function loadAttendanceList() { 
+
+            const topic = meetingTopicInput.value; 
+
+            listOutput.innerHTML = '<p>Carregando...</p>'; 
+
+ 
+
+            const { data, error } = await supabase 
+
+                .from('attendance') 
+
+                .select('*') 
+
+                .eq('meeting_topic', topic) 
+
+                .order('check_in_time', { ascending: false }); 
+
+ 
+
+            if (error) { 
+
+                listOutput.innerHTML = `<p style="color:red">Erro ao carregar: ${error.message}</p>`; 
+
+                return; 
+
+            } 
+
+ 
+
+            if (data.length === 0) { 
+
+                listOutput.innerHTML = `<p>Nenhuma presença registrada para "${topic}".</p>`; 
+
+                return; 
+
+            } 
+
+ 
+
+            let html = `<h3>Lista: ${topic}</h3><table> 
+
+                        <thead><tr><th>Nome</th><th>Status</th><th>Hora</th></tr></thead> 
+
+                        <tbody>`; 
+
+             
+
+            data.forEach(item => { 
+
+                const date = new Date(item.check_in_time).toLocaleTimeString('pt-BR'); 
+
+                html += `<tr> 
+
+                            <td>${item.user_name}</td> 
+
+                            <td><span style="color:green">✔ Presente</span></td> 
+
+                            <td>${date}</td> 
+
+                         </tr>`; 
+
+            }); 
+
+ 
+
+            html += '</tbody></table>'; 
+
+            listOutput.innerHTML = html; 
+
+        } 
+
+ 
+
+        // --- EVENT LISTENERS --- 
+
+        document.getElementById('registrationForm').addEventListener('submit', (e) => { 
+
+            e.preventDefault(); 
+
+            registerUser( 
+
+                document.getElementById('name').value, 
+
+                document.getElementById('role').value, 
+
+                document.getElementById('company').value 
+
+            ); 
+
+        }); 
+
+ 
+
+        document.getElementById('btnCheckIn').addEventListener('click', registerAttendance); 
+
+        document.getElementById('btnLoadAttendance').addEventListener('click', loadAttendanceList); 
+
+ 
+
+    </script> 
+
+</body> 
+
+</html> 
+
+ 
